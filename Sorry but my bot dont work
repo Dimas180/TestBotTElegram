@@ -1,0 +1,76 @@
+import telebot
+import sqlite3
+import random
+token = "2028168329:AAGiTeHHCLgZ7IrvpTJWagp8ZCrV5aHVk1E"
+bot = telebot.TeleBot(token)
+
+connection = sqlite3.connect('user_info.db')
+cursor = connection.cursor()
+cursor.execute("""CREATE TABLE IF NOT EXISTS user_info(
+            user_id,user_name,user_surname
+
+            )""")
+global state
+state = 0
+
+
+@bot.message_handler(commands=["start"])
+def ask_name(message):
+    first_name = message.chat.first_name
+    bot.send_message(message.chat.id, f"привет {first_name}, я бот которой может поднять тебе настроение.\n смотри что я умею: \n /getphoto - я выведу рандомную картинку или гифку с котом \n /getaudio - я выведу рандомную \n /weather - я выведу прогноз погоды ")
+    global state
+    state = 1
+    local_connection = sqlite3.connect('user_info.db')
+    local_cursor = local_connection.cursor()
+    local_cursor.execute("INSERT INTO user_info  VALUES(?,?,?);", (message.chat.id,"NULL","NULL"))
+
+
+
+def get_state(message):
+    return state
+
+
+
+
+def send_start_message(message):
+
+    bot.send_message(message.chat.id, "привет, вот небольшой список команд которые я могу сделать:")
+    bot.send_message(message.chat.id,f"/getphoto - я выведу рандомную картинку или гифку с котом"  )
+    bot.send_message(message.chat.id,"/getaudio - я выведу рандомную ")
+
+
+print("something happened")
+
+
+@bot.message_handler(commands=["getphoto"])
+def send_photo(message):
+    url = "https://aws.random.cat/view/"
+    number = random.randint(1,1000)
+    bot.send_photo(message.chat.id,url + str(number))
+
+
+@bot.message_handler(commands=["getaudio"])
+def send_sound(message):
+    url = ""
+    bot.send_audio(message.chat.id,url )
+
+
+@bot.message_handler(commands=['weather'])
+def start_messagess(message):
+    bot.reply_to(message, f'Уже начал искать')
+    bot.send_document(message.chat.id, '<https://i.gifer.com/NZFC.mp4>')
+
+
+@bot.message_handler(func=lambda message:
+get_state(message) == 2)
+def ask_preferencies(message):
+    bot.send_message(message.chat.id,"извини, я тебя не понимаю, возможно ты забыл (/) ")
+
+    local_connection = sqlite3.connect('user_info.db')
+    local_cursor = local_connection.cursor()
+
+    global state
+    state = 3
+
+
+bot.polling(none_stop=True, interval=0)
